@@ -57,6 +57,8 @@ using Volo.Abp.Threading;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Volo.CmsKit.Reactions;
 using Volo.CmsKit.Comments;
+using Volo.CmsKit.Localization;
+using Volo.CmsKit.Public.Web.Menus;
 
 namespace CmsKitDemo;
 
@@ -213,6 +215,10 @@ public class CmsKitDemoModule : AbpModule
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Resources
+                .Get<CmsKitResource>()
+                .AddVirtualJson("/Localization/CmsKitDemo");
+            
+            options.Resources
                 .Add<CmsKitDemoResource>("en")
                 .AddBaseTypes(typeof(AbpValidationResource))
                 .AddVirtualJson("/Localization/CmsKitDemo");
@@ -265,6 +271,8 @@ public class CmsKitDemoModule : AbpModule
         Configure<AbpNavigationOptions>(options =>
         {
             options.MenuContributors.Add(new CmsKitDemoMenuContributor());
+            options.MenuContributors.RemoveAll(x => x.GetType() == typeof(CmsKitPublicMenuContributor));
+            options.MenuContributors.Add(new MyCmsKitPublicMenuContributor());
         });
     }
 
