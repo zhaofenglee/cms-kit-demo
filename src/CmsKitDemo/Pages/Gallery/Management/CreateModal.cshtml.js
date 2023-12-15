@@ -39,26 +39,61 @@
             abp.ui.unblock();
         });
 
-        function uploadImage() {
-            var formData = new FormData();
-            formData.append("name", file.name);
-            formData.append("file", file);
+        function resizeImage(file, size) {
+            return new Promise((resolve, reject) => {
+                const image = new Image();
+                image.src = URL.createObjectURL(file);
+                image.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+        
+                    const width = image.width;
+                    const height = image.height;
+        
+                    const minSize = Math.min(width, height);
+                    const offsetX = width > minSize ? (width - minSize) / 2 : 0;
+                    const offsetY = height > minSize ? (height - minSize) / 2 : 0;
+        
+                    canvas.width = size;
+                    canvas.height = size;
+        
+                    context.drawImage(image, offsetX, offsetY, minSize, minSize, 0, 0, size, size);
+        
+                    canvas.toBlob(resolve, file.type);
+                };
+                image.onerror = reject;
+            });
+        }
 
-            $.ajax(
-                {
-                    url: fileUploadUri,
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    type: "POST",
-                    success: function (data) {
-                        $("#Image_CoverImageMediaId").val(data.id);
-                    },
-                    error: function (err) {
-                        abp.message.error(err);
+
+        function uploadImage() {
+            resizeImage(file, 1024)  // 1:1 ratio
+            .then(resizedImage => {
+                var formData = new FormData();
+                formData.append("name", resizedImage.name);
+                formData.append("file", resizedImage);
+    
+                $.ajax(
+                    {
+                        url: fileUploadUri,
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        type: "POST",
+                        success: function (data) {
+                            $("#Image_CoverImageMediaId").val(data.id);
+                        },
+                        error: function (err) {
+                            abp.message.error(err);
+                        }
                     }
-                }
-            );
+                );
+            })
+            .catch(error => {
+                console.error('Error resizing image:', error);
+            });
+
+           
         }
     };
 
